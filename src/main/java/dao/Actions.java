@@ -4,238 +4,93 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Date;
 import java.util.ArrayList;
 import java.util.List;
 
-import utl.DatabaseUtility;
+public class ActionsDAO {
 
-public class Actions {
-    private int id;
-    private String actionType;
-    private String description;
-    private Date initiationDate;
-    private Date completionDate;
-    private String status;
-    private String impactLevel;
-    private String responsibleDepartment;
-    private String expectedOutcome;
-    private int fkInvestigationId;
+    public boolean createAction(int id, String actionType, String description, String initiationDate, String completionDate, String status, String impactLevel, String responsibleDepartment, String expectedOutcome, int fkInvestigationId) {
+        String sql = "INSERT INTO actions (id, action_type, description, initiation_date, completion_date, status, impact_level, responsible_department, expected_outcome, fk_investigation_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        try (Connection conn = DatabaseUtility.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, id);
+            pstmt.setString(2, actionType);
+            pstmt.setString(3, description);
+            pstmt.setString(4, initiationDate);
+            pstmt.setString(5, completionDate);
+            pstmt.setString(6, status);
+            pstmt.setString(7, impactLevel);
+            pstmt.setString(8, responsibleDepartment);
+            pstmt.setString(9, expectedOutcome);
+            pstmt.setInt(10, fkInvestigationId);
 
-    public Actions() {
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+        return false;
     }
 
-    public Actions(int id, String actionType, String description, Date initiationDate, Date completionDate, String status,
-            String impactLevel, String responsibleDepartment, String expectedOutcome, int fkInvestigationId) {
-        this.id = id;
-        this.actionType = actionType;
-        this.description = description;
-        this.initiationDate = initiationDate;
-        this.completionDate = completionDate;
-        this.status = status;
-        this.impactLevel = impactLevel;
-        this.responsibleDepartment = responsibleDepartment;
-        this.expectedOutcome = expectedOutcome;
-        this.fkInvestigationId = fkInvestigationId;
-    }
+    public List<String[]> readActions() {
+        String sql = "SELECT * FROM actions";
+        List<String[]> actions = new ArrayList<>();
+        try (Connection conn = DatabaseUtility.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
 
-    // getters and setters
-
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
-
-    public String getActionType() {
-        return actionType;
-    }
-
-    public void setActionType(String actionType) {
-        this.actionType = actionType;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public Date getInitiationDate() {
-        return initiationDate;
-    }
-
-    public void setInitiationDate(Date initiationDate) {
-        this.initiationDate = initiationDate;
-    }
-
-    public Date getCompletionDate() {
-        return completionDate;
-    }
-
-    public void setCompletionDate(Date completionDate) {
-        this.completionDate = completionDate;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public String getImpactLevel() {
-        return impactLevel;
-    }
-
-    public void setImpactLevel(String impactLevel) {
-        this.impactLevel = impactLevel;
-    }
-
-    public String getResponsibleDepartment() {
-        return responsibleDepartment;
-    }
-
-    public void setResponsibleDepartment(String responsibleDepartment) {
-        this.responsibleDepartment = responsibleDepartment;
-    }
-
-    public String getExpectedOutcome() {
-        return expectedOutcome;
-    }
-
-    public void setExpectedOutcome(String expectedOutcome) {
-        this.expectedOutcome = expectedOutcome;
-    }
-
-    public int getFkInvestigationId() {
-        return fkInvestigationId;
-    }
-
-    public void setFkInvestigationId(int fkInvestigationId) {
-        this.fkInvestigationId = fkInvestigationId;
-    }
-
-    // CRUD operations
-
-    public List<Actions> getAllActions() {
-        List<Actions> actionsList = new ArrayList<>();
-        try (Connection connection = DatabaseUtility.getConnection()) {
-            PreparedStatement statement = connection.prepareStatement("SELECT * FROM actions");
-            ResultSet resultSet = statement.executeQuery();
-
-            while (resultSet.next()) {
-                Actions action = new Actions(
-                        resultSet.getInt("id"),
-                        resultSet.getString("action_type"),
-                        resultSet.getString("description"),
-                        resultSet.getDate("initiation_date"),
-                        resultSet.getDate("completion_date"),
-                        resultSet.getString("status"),
-                        resultSet.getString("impact_level"),
-                        resultSet.getString("responsible_department"),
-                        resultSet.getString("expected_outcome"),
-                        resultSet.getInt("fk_investigation_id")
-                );
-
-                actionsList.add(action);
+            while (rs.next()) {
+                String[] action = {
+                        rs.getString("id"),
+                        rs.getString("action_type"),
+                        rs.getString("description"),
+                        rs.getString("initiation_date"),
+                        rs.getString("completion_date"),
+                        rs.getString("status"),
+                        rs.getString("impact_level"),
+                        rs.getString("responsible_department"),
+                        rs.getString("expected_outcome"),
+                        rs.getString("fk_investigation_id")
+                };
+                actions.add(action);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
         }
-        return actionsList;
+        return actions;
     }
 
-    public Actions getActionById(int id) {
-        Actions action = null;
-        try (Connection connection = DatabaseUtility.getConnection()) {
-            PreparedStatement statement = connection.prepareStatement("SELECT * FROM actions WHERE id = ?");
-            statement.setInt(1, id);
-            ResultSet resultSet = statement.executeQuery();
+    public boolean updateAction(int id, String actionType, String description, String initiationDate, String completionDate, String status, String impactLevel, String responsibleDepartment, String expectedOutcome, int fkInvestigationId) {
+        String sql = "UPDATE actions SET action_type = ?, description = ?, initiation_date = ?, completion_date = ?, status = ?, impact_level = ?, responsible_department = ?, expected_outcome = ?, fk_investigation_id = ? WHERE id = ?";
+        try (Connection conn = DatabaseUtility.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, actionType);
+            pstmt.setString(2, description);
+            pstmt.setString(3, initiationDate);
+            pstmt.setString(4, completionDate);
+            pstmt.setString(5, status);
+            pstmt.setString(6, impactLevel);
+            pstmt.setString(7, responsibleDepartment);
+            pstmt.setString(8, expectedOutcome);
+            pstmt.setInt(9, fkInvestigationId);
+            pstmt.setInt(10, id);
 
-            if (resultSet.next()) {
-                action = new Actions(
-                        resultSet.getInt("id"),
-                        resultSet.getString("action_type"),
-                        resultSet.getString("description"),
-                        resultSet.getDate("initiation_date"),
-                        resultSet.getDate("completion_date"),
-                        resultSet.getString("status"),
-                        resultSet.getString("impact_level"),
-                        resultSet.getString("responsible_department"),
-                        resultSet.getString("expected_outcome"),
-                        resultSet.getInt("fk_investigation_id")
-                );
-            }
+            return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
         }
-        return action;
-    }
-
-    public boolean insertAction(Actions action) {
-        boolean success = false;
-        try (Connection connection = DatabaseUtility.getConnection()) {
-            PreparedStatement statement = connection.prepareStatement(
-                    "INSERT INTO actions (action_type, description, initiation_date, completion_date, status, impact_level, responsible_department, expected_outcome, fk_investigation_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            statement.setString(1, action.getActionType());
-            statement.setString(2, action.getDescription());
-            statement.setDate(3, action.getInitiationDate());
-            statement.setDate(4, action.getCompletionDate());
-            statement.setString(5, action.getStatus());
-            statement.setString(6, action.getImpactLevel());
-            statement.setString(7, action.getResponsibleDepartment());
-            statement.setString(8, action.getExpectedOutcome());
-            statement.setInt(9, action.getFkInvestigationId());
-
-            int rowsAffected = statement.executeUpdate();
-            success = rowsAffected > 0;
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return success;
-    }
-
-    public boolean updateAction(Actions action) {
-        boolean success = false;
-        try (Connection connection = DatabaseUtility.getConnection()) {
-            PreparedStatement statement = connection.prepareStatement(
-                    "UPDATE actions SET action_type = ?, description = ?, initiation_date = ?, completion_date = ?, status = ?, impact_level = ?, responsible_department = ?, expected_outcome = ?, fk_investigation_id = ? WHERE id = ?");
-            statement.setString(1, action.getActionType());
-            statement.setString(2, action.getDescription());
-            statement.setDate(3, action.getInitiationDate());
-            statement.setDate(4, action.getCompletionDate());
-            statement.setString(5, action.getStatus());
-            statement.setString(6, action.getImpactLevel());
-            statement.setString(7, action.getResponsibleDepartment());
-            statement.setString(8, action.getExpectedOutcome());
-            statement.setInt(9, action.getFkInvestigationId());
-            statement.setInt(10, action.getId());
-
-            int rowsAffected = statement.executeUpdate();
-            success = rowsAffected > 0;
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return success;
+        return false;
     }
 
     public boolean deleteAction(int id) {
-        boolean success = false;
-        try (Connection connection = DatabaseUtility.getConnection()) {
-            PreparedStatement statement = connection.prepareStatement("DELETE FROM actions WHERE id = ?");
-            statement.setInt(1, id);
+        String sql = "DELETE FROM actions WHERE id = ?";
+        try (Connection conn = DatabaseUtility.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, id);
 
-            int rowsAffected = statement.executeUpdate();
-            success = rowsAffected > 0;
+            return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
         }
-        return success;
+        return false;
     }
 }
