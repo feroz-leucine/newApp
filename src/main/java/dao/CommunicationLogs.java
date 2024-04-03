@@ -7,55 +7,52 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
+import model.CommunicationLog;
+import util.DatabaseUtility;
 
 public class CommunicationLogsDAO {
 
-    public boolean createCommunicationLog(int complaintId, String communicationType, Timestamp communicationDate,
-                                          String communicationSubject, String communicationContent, String initiator,
-                                          boolean isResolved) {
-        String sql = "INSERT INTO communication_logs(fk_complaint_id, communication_type, communication_date, communication_subject, communication_content, initiator, is_resolved) VALUES (?, ?, ?, ?, ?, ?, ?)";
+    public boolean createCommunicationLog(CommunicationLog communicationLog) {
+        String sql = "INSERT INTO communication_logs(communication_type, communication_date, communication_subject, communication_content, initiator, is_resolved, fk_complaint_id) VALUES (?, ?, ?, ?, ?, ?, ?)";
 
-        try (Connection conn = DatabaseUtility.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection connection = DatabaseUtility.getConnection()) {
+            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+            preparedStatement.setString(1, communicationLog.getCommunicationType());
+            preparedStatement.setTimestamp(2, communicationLog.getCommunicationDate());
+            preparedStatement.setString(3, communicationLog.getCommunicationSubject());
+            preparedStatement.setString(4, communicationLog.getCommunicationContent());
+            preparedStatement.setString(5, communicationLog.getInitiator());
+            preparedStatement.setInt(6, communicationLog.getIsResolved());
+            preparedStatement.setInt(7, communicationLog.getFk_complaint_id());
 
-            pstmt.setInt(1, complaintId);
-            pstmt.setString(2, communicationType);
-            pstmt.setTimestamp(3, communicationDate);
-            pstmt.setString(4, communicationSubject);
-            pstmt.setString(5, communicationContent);
-            pstmt.setString(6, initiator);
-            pstmt.setBoolean(7, isResolved);
-
-            return pstmt.executeUpdate() > 0;
+            int rowsAffected = preparedStatement.executeUpdate();
+            return rowsAffected > 0;
         } catch (SQLException e) {
             e.printStackTrace();
+            return false;
         }
-
-        return false;
     }
 
-    public List<String[]> readCommunicationLogs(int complaintId) {
-        String sql = "SELECT id, communication_type, communication_date, communication_subject, communication_content, initiator, is_resolved FROM communication_logs WHERE fk_complaint_id = ? ORDER BY communication_date";
-        List<String[]> communicationLogs = new ArrayList<>();
+    public List<CommunicationLog> readCommunicationLogs() {
+        String sql = "SELECT * FROM communication_logs";
+        List<CommunicationLog> communicationLogs = new ArrayList<>();
 
-        try (Connection conn = DatabaseUtility.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection connection = DatabaseUtility.getConnection()) {
+            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+            ResultSet resultSet = preparedStatement.executeQuery();
 
-            pstmt.setInt(1, complaintId);
-            ResultSet rs = pstmt.executeQuery();
+            while (resultSet.next()) {
+                CommunicationLog communicationLog = new CommunicationLog();
+                communicationLog.setId(resultSet.getInt("id"));
+                communicationLog.setCommunicationType(resultSet.getString("communication_type"));
+                communicationLog.setCommunicationDate(resultSet.getTimestamp("communication_date"));
+                communicationLog.setCommunicationSubject(resultSet.getString("communication_subject"));
+                communicationLog.setCommunicationContent(resultSet.getString("communication_content"));
+                communicationLog.setInitiator(resultSet.getString("initiator"));
+                communicationLog.setIsResolved(resultSet.getInt("is_resolved"));
+                communicationLog.setFk_complaint_id(resultSet.getInt("fk_complaint_id"));
 
-            while (rs.next()) {
-                String[] log = {
-                        Integer.toString(rs.getInt("id")),
-                        rs.getString("communication_type"),
-                        rs.getTimestamp("communication_date").toString(),
-                        rs.getString("communication_subject"),
-                        rs.getString("communication_content"),
-                        rs.getString("initiator"),
-                        Boolean.toString(rs.getBoolean("is_resolved"))
-                };
-
-                communicationLogs.add(log);
+                communicationLogs.add(communicationLog);
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -64,43 +61,40 @@ public class CommunicationLogsDAO {
         return communicationLogs;
     }
 
-    public boolean updateCommunicationLog(int logId, String communicationType, Timestamp communicationDate,
-                                          String communicationSubject, String communicationContent, String initiator,
-                                          boolean isResolved) {
-        String sql = "UPDATE communication_logs SET communication_type = ?, communication_date = ?, communication_subject = ?, communication_content = ?, initiator = ?, is_resolved = ? WHERE id = ?";
+    public boolean updateCommunicationLog(CommunicationLog communicationLog) {
+        String sql = "UPDATE communication_logs SET communication_type = ?, communication_date = ?, communication_subject = ?, communication_content = ?, initiator = ?, is_resolved = ?, fk_complaint_id = ? WHERE id = ?";
 
-        try (Connection conn = DatabaseUtility.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection connection = DatabaseUtility.getConnection()) {
+            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+            preparedStatement.setString(1, communicationLog.getCommunicationType());
+            preparedStatement.setTimestamp(2, communicationLog.getCommunicationDate());
+            preparedStatement.setString(3, communicationLog.getCommunicationSubject());
+            preparedStatement.setString(4, communicationLog.getCommunicationContent());
+            preparedStatement.setString(5, communicationLog.getInitiator());
+            preparedStatement.setInt(6, communicationLog.getIsResolved());
+            preparedStatement.setInt(7, communicationLog.getFk_complaint_id());
+            preparedStatement.setInt(8, communicationLog.getId());
 
-            pstmt.setString(1, communicationType);
-            pstmt.setTimestamp(2, communicationDate);
-            pstmt.setString(3, communicationSubject);
-            pstmt.setString(4, communicationContent);
-            pstmt.setString(5, initiator);
-            pstmt.setBoolean(6, isResolved);
-            pstmt.setInt(7, logId);
-
-            return pstmt.executeUpdate() > 0;
+            int rowsAffected = preparedStatement.executeUpdate();
+            return rowsAffected > 0;
         } catch (SQLException e) {
             e.printStackTrace();
+            return false;
         }
-
-        return false;
     }
 
-    public boolean deleteCommunicationLog(int logId) {
+    public boolean deleteCommunicationLog(int communicationLogId) {
         String sql = "DELETE FROM communication_logs WHERE id = ?";
 
-        try (Connection conn = DatabaseUtility.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection connection = DatabaseUtility.getConnection()) {
+            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+            preparedStatement.setInt(1, communicationLogId);
 
-            pstmt.setInt(1, logId);
-
-            return pstmt.executeUpdate() > 0;
+            int rowsAffected = preparedStatement.executeUpdate();
+            return rowsAffected > 0;
         } catch (SQLException e) {
             e.printStackTrace();
+            return false;
         }
-
-        return false;
     }
 }
